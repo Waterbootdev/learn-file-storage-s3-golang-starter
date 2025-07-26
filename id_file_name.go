@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"mime"
 	"mime/multipart"
-	"path/filepath"
 	"slices"
 )
 
@@ -35,27 +34,4 @@ func idFileName(id string, header *multipart.FileHeader, supported []string) (st
 	}
 
 	return id + extension[0], nil
-}
-
-func (cfg *apiConfig) assetsFilePath(fileName string) string {
-	return filepath.Join(cfg.assetsRoot, fileName)
-}
-
-func (cfg *apiConfig) portURL() string {
-	return fmt.Sprintf("http://localhost:%s", cfg.port)
-}
-func (cfg *apiConfig) getFilePathURL(filePath string) *string {
-	path := filepath.Join(cfg.portURL(), filePath)
-	return &path
-}
-
-func (cfg *apiConfig) idFilePath(id string, header *multipart.FileHeader, supported []string) (string, error) {
-
-	fileName, err := idFileName(id, header, supported)
-
-	if err != nil {
-		return "", err
-	}
-
-	return cfg.assetsFilePath(fileName), nil
 }

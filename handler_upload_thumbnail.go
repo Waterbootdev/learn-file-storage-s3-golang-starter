@@ -2,9 +2,7 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"net/http"
-	"os"
 
 	"github.com/bootdotdev/learn-file-storage-s3-golang-starter/internal/auth"
 	"github.com/google/uuid"
@@ -41,37 +39,14 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	file, header, err := r.FormFile("thumbnail")
-
-	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Unable to parse form file", err)
-		return
-	}
-
-	defer file.Close()
-
-	filePath, err := cfg.idFilePath(videoIDString, header, []string{"image/jpeg", "image/png"})
-
-	if err != nil {
-		respondWithError(w, http.StatusBadRequest, err.Error(), err)
-		return
-	}
-
-	assetFile, err := os.Create(filePath)
-
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Couldn't create file", err)
-		return
-	}
-
-	defer assetFile.Close()
-
-	_, err = io.Copy(assetFile, file)
+	url, written, err := cfg.copyToIdFile(r, "thumbnail", []string{"image/jpeg", "image/png"}, videoIDString)
 
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't copy file", err)
 		return
 	}
+
+	fmt.Println("copied", written, "bytes to", url)
 
 	video, err := cfg.db.GetVideo(videoID)
 	if err != nil || video.UserID != userID {
@@ -79,7 +54,7 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	video.ThumbnailURL = cfg.getFilePathURL(filePath)
+	video.ThumbnailURL = url
 
 	err = cfg.db.UpdateVideo(video)
 
