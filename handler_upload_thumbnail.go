@@ -3,59 +3,14 @@ package main
 import (
 	"fmt"
 	"io"
-	"mime"
-	"mime/multipart"
 	"net/http"
 	"os"
-	"path/filepath"
-	"slices"
 
 	"github.com/bootdotdev/learn-file-storage-s3-golang-starter/internal/auth"
 	"github.com/google/uuid"
 )
 
 const MAX_MEMORY = 10 << 20
-
-func madiaFileExtension(header *multipart.FileHeader, supported []string) (string, error) {
-	mediaType, _, err := mime.ParseMediaType(header.Header.Get("Content-Type"))
-	if err != nil {
-		return "", err
-	}
-
-	if !slices.Contains(supported, mediaType) {
-		return "", fmt.Errorf("unsupported media type: %s", mediaType)
-	}
-
-	extension, err := mime.ExtensionsByType(mediaType)
-
-	if err != nil {
-		return "", err
-	}
-
-	return extension[0], nil
-}
-
-func thumbnailFileName(videoID string, header *multipart.FileHeader) (string, error) {
-	extension, err := madiaFileExtension(header, []string{"image/jpeg", "image/png"})
-
-	if err != nil {
-		return "", err
-	}
-
-	return videoID + extension, nil
-}
-
-func (cfg *apiConfig) videoFilePath(fileName string) string {
-	return filepath.Join(cfg.assetsRoot, fileName)
-}
-
-func (cfg *apiConfig) portURL() string {
-	return fmt.Sprintf("http://localhost:%s", cfg.port)
-}
-func (cfg *apiConfig) getFilePathURL(filePath string) *string {
-	path := filepath.Join(cfg.portURL(), filePath)
-	return &path
-}
 
 func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Request) {
 	videoIDString := r.PathValue("videoID")
@@ -79,8 +34,6 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 
 	fmt.Println("uploading thumbnail for video", videoID, "by user", userID)
 
-	// TODO: implement the upload here
-
 	err = r.ParseMultipartForm(MAX_MEMORY)
 
 	if err != nil {
@@ -97,14 +50,12 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 
 	defer file.Close()
 
-	fileName, err := thumbnailFileName(videoIDString, header)
+	filePath, err := cfg.idFilePath(videoIDString, header, []string{"image/jpeg", "image/png"})
 
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, err.Error(), err)
 		return
 	}
-
-	filePath := cfg.videoFilePath(fileName)
 
 	assetFile, err := os.Create(filePath)
 
