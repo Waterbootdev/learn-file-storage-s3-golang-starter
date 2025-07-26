@@ -49,9 +49,9 @@ func (cfg *apiConfig) getFilePathURL(filePath string) *string {
 	return &path
 }
 
-func (cfg *apiConfig) idFilePath(videoIDString string, header *multipart.FileHeader, supported []string) (string, error) {
+func (cfg *apiConfig) idFilePath(id string, header *multipart.FileHeader, supported []string) (string, error) {
 
-	fileName, err := idFileName(videoIDString, header, supported)
+	fileName, err := idFileName(id, header, supported)
 
 	if err != nil {
 		return "", err
