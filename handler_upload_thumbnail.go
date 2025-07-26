@@ -46,7 +46,7 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	fmt.Println("copied", written, "bytes to", url)
+	fmt.Println("copied", written, "bytes to", *url)
 
 	video, err := cfg.db.GetVideo(videoID)
 	if err != nil || video.UserID != userID {

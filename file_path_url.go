@@ -3,15 +3,14 @@ package main
 import (
 	"fmt"
 	"mime/multipart"
-	"path/filepath"
 )
 
 func (cfg *apiConfig) getPortURL() string {
-	return fmt.Sprintf("http://localhost:%s", cfg.port)
+	return fmt.Sprintf("http://localhost:%s/", cfg.port)
 }
 
 func (cfg *apiConfig) filePathURL(filePath string) *string {
-	path := filepath.Join(cfg.getPortURL(), filePath)
+	path := cfg.getPortURL() + filePath
 	return &path
 }
 
