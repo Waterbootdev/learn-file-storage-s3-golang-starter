@@ -40,3 +40,13 @@ func (cfg *apiConfig) copyToIdFile(request *http.Request, formFileKey string, su
 
 	return url, written, err
 }
+
+func (cfg *apiConfig) copyToRandomIdFile(request *http.Request, formFileKey string, supportedMediatypes []string, numberBytes int) (*string, int64, error) {
+	id, err := randomId(numberBytes)
+
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return cfg.copyToIdFile(request, formFileKey, supportedMediatypes, id)
+}

@@ -39,7 +39,7 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	url, written, err := cfg.copyToIdFile(r, "thumbnail", []string{"image/jpeg", "image/png"}, videoIDString)
+	url, written, err := cfg.copyToRandomIdFile(r, "thumbnail", []string{"image/jpeg", "image/png"}, 32)
 
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't copy file to id file", err)
