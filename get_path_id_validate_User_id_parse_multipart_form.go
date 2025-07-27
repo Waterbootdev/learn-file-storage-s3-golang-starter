@@ -18,7 +18,7 @@ func parsePathValueUUID(r *http.Request, w http.ResponseWriter, key string) (str
 	return idString, id, true
 }
 
-func (cfg *apiConfig) validateToken(r *http.Request, w http.ResponseWriter) (uuid.UUID, bool) {
+func (cfg *apiConfig) validateJWT(r *http.Request, w http.ResponseWriter) (uuid.UUID, bool) {
 
 	token, err := auth.GetBearerToken(r.Header)
 
@@ -55,7 +55,7 @@ func (cfg *apiConfig) getPathIdvalidateUserIDParseMultipartForm(w http.ResponseW
 		return idString, id, uuid.Nil, false
 	}
 
-	userID, ok := cfg.validateToken(r, w)
+	userID, ok := cfg.validateJWT(r, w)
 
 	if !ok {
 		return idString, id, userID, false

@@ -3,21 +3,21 @@ package main
 import (
 	"fmt"
 	"net/http"
-)
 
-const MAX_MEMORY = 10 << 20
+	"github.com/bootdotdev/learn-file-storage-s3-golang-starter/internal/database"
+)
 
 func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Request) {
 
-	videoID, id, userID, ok := cfg.getPathIdvalidateUserIDParseMultipartForm(w, r, "videoID", MAX_MEMORY)
+	videoIDString, videoID, userID, ok := cfg.getPathIdvalidateUserIDParseMultipartForm(w, r, "videoID", 10<<20)
 
 	if !ok {
 		return
 	}
 
-	fmt.Println("uploading thumbnail for video", videoID, "by user", userID)
+	fmt.Println("uploading thumbnail for video", videoIDString, "by user", userID)
 
-	url, written, err := cfg.copyToRandomIdFile(r, "thumbnail", []string{"image/jpeg", "image/png"}, 32)
+	url, written, err := cfg.copyToRandomIdFile(r, "thumbnail", []string{"image/jpeg", "image/png"}, 32, cfg.copyToIdFile)
 
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't copy file to id file", err)
@@ -26,20 +26,8 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 
 	fmt.Println("copied", written, "bytes to", *url)
 
-	video, err := cfg.db.GetVideo(id)
-	if err != nil || video.UserID != userID {
-		respondWithError(w, http.StatusUnauthorized, "Couldn't get video", err)
-		return
-	}
+	cfg.updateVideo(w, videoID, userID, func(video *database.Video) {
+		video.ThumbnailURL = url
+	})
 
-	video.ThumbnailURL = url
-
-	err = cfg.db.UpdateVideo(video)
-
-	if err != nil || video.UserID != userID {
-		respondWithError(w, http.StatusInternalServerError, "Couldn't update video", err)
-		return
-	}
-
-	respondWithJSON(w, http.StatusOK, video)
 }

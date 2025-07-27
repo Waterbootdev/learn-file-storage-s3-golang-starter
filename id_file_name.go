@@ -7,31 +7,31 @@ import (
 	"slices"
 )
 
-func madiaFileExtension(header *multipart.FileHeader, supported []string) ([]string, error) {
+func madiaFileExtension(header *multipart.FileHeader, supported []string) (string, []string, error) {
 	mediaType, _, err := mime.ParseMediaType(header.Header.Get("Content-Type"))
 	if err != nil {
-		return nil, err
+		return mediaType, nil, err
 	}
 
 	if !slices.Contains(supported, mediaType) {
-		return nil, fmt.Errorf("unsupported media type: %s", mediaType)
+		return mediaType, nil, fmt.Errorf("unsupported media type: %s", mediaType)
 	}
 
 	extensions, err := mime.ExtensionsByType(mediaType)
 
 	if err != nil {
-		return nil, err
+		return mediaType, nil, err
 	}
 
-	return extensions, nil
+	return mediaType, extensions, nil
 }
 
-func idFileName(id string, header *multipart.FileHeader, supported []string) (string, error) {
-	extension, err := madiaFileExtension(header, supported)
+func idFileName(id string, header *multipart.FileHeader, supported []string) (string, string, error) {
+	mediatype, extension, err := madiaFileExtension(header, supported)
 
 	if err != nil {
-		return "", err
+		return mediatype, "", err
 	}
 
-	return id + extension[0], nil
+	return mediatype, id + extension[0], nil
 }

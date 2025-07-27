@@ -19,6 +19,7 @@ type apiConfig struct {
 	platform         string
 	filepathRoot     string
 	assetsRoot       string
+	tempRoot         string
 	s3Bucket         string
 	s3Region         string
 	s3CfDistribution string
@@ -53,6 +54,8 @@ func main() {
 	if filepathRoot == "" {
 		log.Fatal("FILEPATH_ROOT environment variable is not set")
 	}
+
+	tempRoot := os.Getenv("TEMP_ROOT")
 
 	assetsRoot := os.Getenv("ASSETS_ROOT")
 	if assetsRoot == "" {
@@ -92,6 +95,7 @@ func main() {
 		platform:         platform,
 		filepathRoot:     filepathRoot,
 		assetsRoot:       assetsRoot,
+		tempRoot:         tempRoot,
 		s3Bucket:         s3Bucket,
 		s3Region:         s3Region,
 		s3CfDistribution: s3CfDistribution,

@@ -3,10 +3,14 @@ package main
 import (
 	"fmt"
 	"mime/multipart"
+	"net/http"
 )
 
 func (cfg *apiConfig) getPortURL() string {
 	return fmt.Sprintf("http://localhost:%s/", cfg.port)
+}
+func (cfg *apiConfig) getS3URL() string {
+	return fmt.Sprintf("https://%s.s3.%s.amazonaws.com", cfg.s3Bucket, cfg.s3Region)
 }
 
 func (cfg *apiConfig) filePathURL(filePath string) *string {
@@ -14,12 +18,26 @@ func (cfg *apiConfig) filePathURL(filePath string) *string {
 	return &path
 }
 
-func (cfg *apiConfig) idFilePathURL(id string, header *multipart.FileHeader, supported []string) (string, *string, error) {
-	filePath, err := cfg.idFilePath(id, header, supported)
+func (cfg *apiConfig) s3FilePathURL(fileName string) *string {
+
+	path := cfg.getS3URL() + fileName
+	return &path
+}
+
+func (cfg *apiConfig) idFilePathURL(request *http.Request, formFileKey string, id string, supported []string, idFilePath func(string) string, filePathURL func(string) *string) (multipart.File, string, string, *string, error) {
+
+	file, header, err := request.FormFile(formFileKey)
 
 	if err != nil {
-		return "", nil, err
+		return file, "", "", nil, err
 	}
 
-	return filePath, cfg.filePathURL(filePath), nil
+	mediaType, filePath, err := cfg.idFilePath(id, header, supported, idFilePath)
+
+	if err != nil {
+		file.Close()
+		return file, mediaType, filePath, nil, err
+	}
+
+	return file, mediaType, filePath, filePathURL(filePath), nil
 }
