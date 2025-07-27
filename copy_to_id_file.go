@@ -56,22 +56,64 @@ func (cfg *apiConfig) copyToTempFile(request *http.Request, formFileKey string, 
 
 	written, err := io.Copy(tempFile, file)
 
+	if err != nil {
+		tempFile.Close()
+		os.Remove(tempFile.Name())
+		return mediaType, fileName, url, tempFile, written, err
+	}
+
 	return mediaType, fileName, url, tempFile, written, err
+}
+
+func getPrefixSchema(tempFile *os.File) (string, error) {
+
+	aspectRatio, err := getVideoAspectRatio(tempFile.Name())
+
+	if err != nil {
+		return "", err
+	}
+
+	schema, err := prefixSchema(aspectRatio)
+
+	if err != nil {
+		return "", err
+	}
+
+	return schema, nil
+}
+
+func getPrefixFilePathURL(tempFile *os.File, fileName string, cfg *apiConfig) (string, *string, error) {
+
+	prefixSchema, err := getPrefixSchema(tempFile)
+
+	if err != nil {
+		return "", nil, err
+	}
+
+	prefixFileName := prefixSchema + "/" + fileName
+
+	return prefixFileName, cfg.s3FilePathURL(prefixFileName), nil
 }
 
 func (cfg *apiConfig) copyToS3IdFile(request *http.Request, formFileKey string, supportedMediatypes []string, id string) (*string, int64, error) {
 
 	mediaType, fileName, url, tempFile, written, err := cfg.copyToTempFile(request, formFileKey, supportedMediatypes, id)
 
+	if err != nil {
+		return url, written, err
+	}
+
 	defer os.Remove(tempFile.Name())
 
 	defer tempFile.Close()
+
+	_, err = tempFile.Seek(0, io.SeekStart)
 
 	if err != nil {
 		return url, written, err
 	}
 
-	_, err = tempFile.Seek(0, io.SeekStart)
+	fileName, url, err = getPrefixFilePathURL(tempFile, fileName, cfg)
 
 	if err != nil {
 		return url, written, err

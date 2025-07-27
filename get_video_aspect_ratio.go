@@ -19,15 +19,15 @@ func (ff *ffprobe) aspectRatio(more bool) string {
 	height := ff.Streams[0].Height
 
 	if width > height {
-		if height*16 == width*9 {
+		if height*16/10 == width*9/10 {
 			return "16:9"
-		} else if more && height*4 == width*3 {
+		} else if more && height*4/10 == width*3/10 {
 			return "4:3"
 		}
 	} else if width < height {
-		if width*16 == height*9 {
+		if width*16/10 == height*9/10 {
 			return "9:16"
-		} else if more && width*4 == height*3 {
+		} else if more && width*4/10 == height*3/10 {
 			return "3:4"
 		}
 	}
@@ -48,15 +48,15 @@ func getVideoAspectRatio(filePath string) (string, error) {
 		return "", err
 	}
 
-	var ff ffprobe
+	var probe ffprobe
 
-	err = json.Unmarshal(buffer.Bytes(), &ff)
+	err = json.Unmarshal(buffer.Bytes(), &probe)
 
 	if err != nil {
 		return "", err
 	}
 
-	return ff.aspectRatio(false), nil
+	return probe.aspectRatio(true), nil
 }
 
 func prefixSchema(aspectRatio string) (string, error) {

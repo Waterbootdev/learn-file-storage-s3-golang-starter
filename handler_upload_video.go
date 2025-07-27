@@ -8,7 +8,7 @@ import (
 )
 
 func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request) {
-	videoIDString, vedeoID, userID, ok := cfg.getPathIdvalidateUserIDParseMultipartForm(w, r, "videoID", 10<<30)
+	videoIDString, videoID, userID, ok := cfg.getPathIdvalidateUserIDParseMultipartForm(w, r, "videoID", 10<<30)
 
 	if !ok {
 		return
@@ -25,7 +25,7 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 
 	fmt.Println("copied", written, "bytes to", *url)
 
-	cfg.updateVideo(w, vedeoID, userID, func(video *database.Video) {
+	cfg.updateVideo(w, videoID, userID, func(video *database.Video) {
 		video.VideoURL = url
 	})
 }
