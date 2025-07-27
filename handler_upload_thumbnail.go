@@ -17,12 +17,14 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 
 	fmt.Println("uploading thumbnail for video", videoIDString, "by user", userID)
 
-	url, written, err := cfg.copyToRandomIdFile(r, "thumbnail", []string{"image/jpeg", "image/png"}, 32, cfg.copyToIdFile)
+	filePath, written, err := cfg.copyToRandomIdFile(r, "thumbnail", []string{"image/jpeg", "image/png"}, 32, cfg.copyToIdFile)
 
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't copy file to id file", err)
 		return
 	}
+
+	url := cfg.filePathURL(filePath)
 
 	fmt.Println("copied", written, "bytes to", *url)
 

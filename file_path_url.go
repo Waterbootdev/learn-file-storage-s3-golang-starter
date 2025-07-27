@@ -24,20 +24,20 @@ func (cfg *apiConfig) s3FilePathURL(fileName string) *string {
 	return &path
 }
 
-func (cfg *apiConfig) idFilePathURL(request *http.Request, formFileKey string, id string, supported []string, idFilePath func(string) string, filePathURL func(string) *string) (multipart.File, string, string, *string, error) {
+func (cfg *apiConfig) idFilePathURL(request *http.Request, formFileKey string, id string, supported []string, idFilePath func(string) string) (multipart.File, string, string, error) {
 
 	file, header, err := request.FormFile(formFileKey)
 
 	if err != nil {
-		return file, "", "", nil, err
+		return file, "", "", err
 	}
 
 	mediaType, filePath, err := cfg.idFilePath(id, header, supported, idFilePath)
 
 	if err != nil {
 		file.Close()
-		return file, mediaType, filePath, nil, err
+		return file, mediaType, filePath, err
 	}
 
-	return file, mediaType, filePath, filePathURL(filePath), nil
+	return file, mediaType, filePath, nil
 }

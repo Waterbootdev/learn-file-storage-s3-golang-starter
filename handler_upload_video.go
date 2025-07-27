@@ -16,12 +16,13 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 
 	fmt.Println("uploading video", videoIDString, "by user", userID)
 
-	url, written, err := cfg.copyToRandomIdFile(r, "video", []string{"video/mp4", ""}, 32, cfg.copyToS3IdFile)
+	fileName, written, err := cfg.copyToRandomIdFile(r, "video", []string{"video/mp4", ""}, 32, cfg.copyToS3IdFile)
 
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't copy file to s3 id file", err)
 		return
 	}
+	url := cfg.s3FilePathURL(fileName)
 
 	fmt.Println("copied", written, "bytes to", *url)
 

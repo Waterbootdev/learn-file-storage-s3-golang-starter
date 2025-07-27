@@ -23,27 +23,27 @@ func copyFormFileTo(formFile multipart.File, filePath string) (int64, error) {
 	return io.Copy(file, formFile)
 }
 
-func (cfg *apiConfig) copyToIdFile(request *http.Request, formFileKey string, supportedMediatypes []string, id string) (*string, int64, error) {
+func (cfg *apiConfig) copyToIdFile(request *http.Request, formFileKey string, supportedMediatypes []string, id string) (string, int64, error) {
 
-	file, _, filePath, url, err := cfg.idFilePathURL(request, formFileKey, id, supportedMediatypes, cfg.assetsFilePath, cfg.filePathURL)
+	file, _, filePath, err := cfg.idFilePathURL(request, formFileKey, id, supportedMediatypes, cfg.assetsFilePath)
 
 	if err != nil {
-		return url, 0, err
+		return filePath, 0, err
 	}
 
 	written, err := copyFormFileTo(file, filePath)
 
 	file.Close()
 
-	return url, written, err
+	return filePath, written, err
 }
 
-func (cfg *apiConfig) copyToTempFile(request *http.Request, formFileKey string, supportedMediatypes []string, id string) (string, string, *string, *os.File, int64, error) {
+func (cfg *apiConfig) copyToTempFile(request *http.Request, formFileKey string, supportedMediatypes []string, id string) (string, string, *os.File, int64, error) {
 
-	file, mediaType, fileName, url, err := cfg.idFilePathURL(request, formFileKey, id, supportedMediatypes, func(s string) string { return s }, cfg.s3FilePathURL)
+	file, mediaType, fileName, err := cfg.idFilePathURL(request, formFileKey, id, supportedMediatypes, func(s string) string { return s })
 
 	if err != nil {
-		return mediaType, fileName, url, nil, 0, err
+		return mediaType, fileName, nil, 0, err
 	}
 
 	defer file.Close()
@@ -51,7 +51,7 @@ func (cfg *apiConfig) copyToTempFile(request *http.Request, formFileKey string, 
 	tempFile, err := os.CreateTemp(cfg.tempRoot, "tubely-upload-*.mp4")
 
 	if err != nil {
-		return mediaType, fileName, url, tempFile, 0, err
+		return mediaType, fileName, tempFile, 0, err
 	}
 
 	written, err := io.Copy(tempFile, file)
@@ -59,10 +59,10 @@ func (cfg *apiConfig) copyToTempFile(request *http.Request, formFileKey string, 
 	if err != nil {
 		tempFile.Close()
 		os.Remove(tempFile.Name())
-		return mediaType, fileName, url, tempFile, written, err
+		return mediaType, fileName, tempFile, written, err
 	}
 
-	return mediaType, fileName, url, tempFile, written, err
+	return mediaType, fileName, tempFile, written, err
 }
 
 func getPrefixSchema(tempFile *os.File) (string, error) {
@@ -82,25 +82,23 @@ func getPrefixSchema(tempFile *os.File) (string, error) {
 	return schema, nil
 }
 
-func getPrefixFilePathURL(tempFile *os.File, fileName string, cfg *apiConfig) (string, *string, error) {
+func getPrefixFilePathURL(tempFile *os.File, fileName string) (string, error) {
 
 	prefixSchema, err := getPrefixSchema(tempFile)
 
 	if err != nil {
-		return "", nil, err
+		return "", err
 	}
 
-	prefixFileName := prefixSchema + "/" + fileName
-
-	return prefixFileName, cfg.s3FilePathURL(prefixFileName), nil
+	return prefixSchema + "/" + fileName, nil
 }
 
-func (cfg *apiConfig) copyToS3IdFile(request *http.Request, formFileKey string, supportedMediatypes []string, id string) (*string, int64, error) {
+func (cfg *apiConfig) copyToS3IdFile(request *http.Request, formFileKey string, supportedMediatypes []string, id string) (string, int64, error) {
 
-	mediaType, fileName, url, tempFile, written, err := cfg.copyToTempFile(request, formFileKey, supportedMediatypes, id)
+	mediaType, fileName, tempFile, written, err := cfg.copyToTempFile(request, formFileKey, supportedMediatypes, id)
 
 	if err != nil {
-		return url, written, err
+		return fileName, written, err
 	}
 
 	defer os.Remove(tempFile.Name())
@@ -110,13 +108,13 @@ func (cfg *apiConfig) copyToS3IdFile(request *http.Request, formFileKey string, 
 	_, err = tempFile.Seek(0, io.SeekStart)
 
 	if err != nil {
-		return url, written, err
+		return fileName, written, err
 	}
 
-	fileName, url, err = getPrefixFilePathURL(tempFile, fileName, cfg)
+	fileName, err = getPrefixFilePathURL(tempFile, fileName)
 
 	if err != nil {
-		return url, written, err
+		return fileName, written, err
 	}
 
 	obj, err := cfg.s3Client.PutObject(request.Context(), &s3.PutObjectInput{
@@ -129,17 +127,17 @@ func (cfg *apiConfig) copyToS3IdFile(request *http.Request, formFileKey string, 
 	fmt.Println(*obj)
 
 	if err != nil {
-		return url, written, err
+		return fileName, written, err
 	}
 
-	return url, written, err
+	return fileName, written, err
 }
 
-func (cfg *apiConfig) copyToRandomIdFile(request *http.Request, formFileKey string, supportedMediatypes []string, numberBytes int, copyToIdFile func(*http.Request, string, []string, string) (*string, int64, error)) (*string, int64, error) {
+func (cfg *apiConfig) copyToRandomIdFile(request *http.Request, formFileKey string, supportedMediatypes []string, numberBytes int, copyToIdFile func(*http.Request, string, []string, string) (string, int64, error)) (string, int64, error) {
 	id, err := randomId(numberBytes)
 
 	if err != nil {
-		return nil, 0, err
+		return "", 0, err
 	}
 
 	return copyToIdFile(request, formFileKey, supportedMediatypes, id)
