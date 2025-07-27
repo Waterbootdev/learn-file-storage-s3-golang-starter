@@ -10,7 +10,7 @@ func (cfg *apiConfig) getPortURL() string {
 	return fmt.Sprintf("http://localhost:%s/", cfg.port)
 }
 func (cfg *apiConfig) getS3URL() string {
-	return fmt.Sprintf("https://%s.s3.%s.amazonaws.com", cfg.s3Bucket, cfg.s3Region)
+	return fmt.Sprintf("https://%s.s3.%s.amazonaws.com/", cfg.s3Bucket, cfg.s3Region)
 }
 
 func (cfg *apiConfig) filePathURL(filePath string) *string {

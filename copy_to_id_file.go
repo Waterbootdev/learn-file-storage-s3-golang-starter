@@ -38,7 +38,7 @@ func (cfg *apiConfig) copyToIdFile(request *http.Request, formFileKey string, su
 	return url, written, err
 }
 
-func (cfg *apiConfig) copyFormFileToTemp(request *http.Request, formFileKey string, supportedMediatypes []string, id string) (string, string, *string, *os.File, int64, error) {
+func (cfg *apiConfig) copyToTempFile(request *http.Request, formFileKey string, supportedMediatypes []string, id string) (string, string, *string, *os.File, int64, error) {
 
 	file, mediaType, fileName, url, err := cfg.idFilePathURL(request, formFileKey, id, supportedMediatypes, func(s string) string { return s }, cfg.s3FilePathURL)
 
@@ -61,7 +61,7 @@ func (cfg *apiConfig) copyFormFileToTemp(request *http.Request, formFileKey stri
 
 func (cfg *apiConfig) copyToS3IdFile(request *http.Request, formFileKey string, supportedMediatypes []string, id string) (*string, int64, error) {
 
-	mediaType, fileName, url, tempFile, written, err := cfg.copyFormFileToTemp(request, formFileKey, supportedMediatypes, id)
+	mediaType, fileName, url, tempFile, written, err := cfg.copyToTempFile(request, formFileKey, supportedMediatypes, id)
 
 	defer os.Remove(tempFile.Name())
 
