@@ -1,4 +1,4 @@
-package main
+package ff
 
 import (
 	"bytes"
@@ -35,7 +35,7 @@ func (ff *ffprobe) aspectRatio(more bool) string {
 	return "other"
 }
 
-func getVideoAspectRatio(filePath string) (string, error) {
+func GetVideoAspectRatio(filePath string) (string, error) {
 	cmd := exec.Command("ffprobe", "-v", "error", "-print_format", "json", "-show_streams", filePath)
 
 	buffer := new(bytes.Buffer)
@@ -59,7 +59,7 @@ func getVideoAspectRatio(filePath string) (string, error) {
 	return probe.aspectRatio(true), nil
 }
 
-func prefixSchema(aspectRatio string) (string, error) {
+func PrefixSchema(aspectRatio string) (string, error) {
 	switch aspectRatio {
 	case "16:9":
 		return "landscape", nil

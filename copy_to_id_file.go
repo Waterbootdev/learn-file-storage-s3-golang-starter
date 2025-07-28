@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/bootdotdev/learn-file-storage-s3-golang-starter/internal/ff"
 )
 
 func copyFormFileTo(formFile multipart.File, filePath string) (int64, error) {
@@ -38,12 +39,12 @@ func (cfg *apiConfig) copyToIdFile(request *http.Request, formFileKey string, su
 	return filePath, written, err
 }
 
-func (cfg *apiConfig) copyToTempFile(request *http.Request, formFileKey string, supportedMediatypes []string, id string) (string, string, *os.File, int64, error) {
+func (cfg *apiConfig) copyToTempFile(request *http.Request, formFileKey string, supportedMediatypes []string, id string) (string, string, string, int64, error) {
 
 	file, mediaType, fileName, err := cfg.idFilePathURL(request, formFileKey, id, supportedMediatypes, func(s string) string { return s })
 
 	if err != nil {
-		return mediaType, fileName, nil, 0, err
+		return mediaType, fileName, "", 0, err
 	}
 
 	defer file.Close()
@@ -51,29 +52,32 @@ func (cfg *apiConfig) copyToTempFile(request *http.Request, formFileKey string, 
 	tempFile, err := os.CreateTemp(cfg.tempRoot, "tubely-upload-*.mp4")
 
 	if err != nil {
-		return mediaType, fileName, tempFile, 0, err
+		return mediaType, fileName, "", 0, err
 	}
+
+	defer tempFile.Close()
+
+	tempFileName := tempFile.Name()
 
 	written, err := io.Copy(tempFile, file)
 
 	if err != nil {
-		tempFile.Close()
-		os.Remove(tempFile.Name())
-		return mediaType, fileName, tempFile, written, err
+		defer os.Remove(tempFile.Name())
+		return mediaType, fileName, tempFileName, written, err
 	}
 
-	return mediaType, fileName, tempFile, written, err
+	return mediaType, fileName, tempFileName, written, err
 }
 
-func getPrefixSchema(tempFile *os.File) (string, error) {
+func getPrefixSchema(tempFile string) (string, error) {
 
-	aspectRatio, err := getVideoAspectRatio(tempFile.Name())
+	aspectRatio, err := ff.GetVideoAspectRatio(tempFile)
 
 	if err != nil {
 		return "", err
 	}
 
-	schema, err := prefixSchema(aspectRatio)
+	schema, err := ff.PrefixSchema(aspectRatio)
 
 	if err != nil {
 		return "", err
@@ -82,7 +86,7 @@ func getPrefixSchema(tempFile *os.File) (string, error) {
 	return schema, nil
 }
 
-func getPrefixFilePathURL(tempFile *os.File, fileName string) (string, error) {
+func getPrefixFilePathURL(tempFile string, fileName string) (string, error) {
 
 	prefixSchema, err := getPrefixSchema(tempFile)
 
@@ -95,23 +99,30 @@ func getPrefixFilePathURL(tempFile *os.File, fileName string) (string, error) {
 
 func (cfg *apiConfig) copyToS3IdFile(request *http.Request, formFileKey string, supportedMediatypes []string, id string) (string, int64, error) {
 
-	mediaType, fileName, tempFile, written, err := cfg.copyToTempFile(request, formFileKey, supportedMediatypes, id)
+	mediaType, fileName, tempFileName, written, err := cfg.copyToTempFile(request, formFileKey, supportedMediatypes, id)
 
 	if err != nil {
 		return fileName, written, err
 	}
 
-	defer os.Remove(tempFile.Name())
+	defer os.Remove(tempFileName)
+
+	tempFastStartFileName, err := ff.ProcessVideoForFastStart(tempFileName)
+
+	if err != nil {
+		return fileName, written, err
+	}
+
+	tempFile, err := os.Open(tempFastStartFileName)
+
+	if err != nil {
+		return fileName, written, err
+	}
 
 	defer tempFile.Close()
+	defer os.Remove(tempFastStartFileName)
 
-	_, err = tempFile.Seek(0, io.SeekStart)
-
-	if err != nil {
-		return fileName, written, err
-	}
-
-	fileName, err = getPrefixFilePathURL(tempFile, fileName)
+	fileName, err = getPrefixFilePathURL(tempFastStartFileName, fileName)
 
 	if err != nil {
 		return fileName, written, err
