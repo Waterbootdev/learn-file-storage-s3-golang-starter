@@ -113,6 +113,12 @@ func (cfg *apiConfig) copyToS3IdFile(request *http.Request, formFileKey string, 
 		return fileName, written, err
 	}
 
+	fileName, err = getPrefixFilePathURL(tempFastStartFileName, fileName)
+
+	if err != nil {
+		return fileName, written, err
+	}
+
 	tempFile, err := os.Open(tempFastStartFileName)
 
 	if err != nil {
@@ -121,12 +127,6 @@ func (cfg *apiConfig) copyToS3IdFile(request *http.Request, formFileKey string, 
 
 	defer tempFile.Close()
 	defer os.Remove(tempFastStartFileName)
-
-	fileName, err = getPrefixFilePathURL(tempFastStartFileName, fileName)
-
-	if err != nil {
-		return fileName, written, err
-	}
 
 	obj, err := cfg.s3Client.PutObject(request.Context(), &s3.PutObjectInput{
 		Bucket:      &cfg.s3Bucket,
