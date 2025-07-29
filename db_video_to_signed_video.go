@@ -9,7 +9,7 @@ import (
 	"github.com/bootdotdev/learn-file-storage-s3-golang-starter/internal/s3"
 )
 
-func splitExtendedURL(extendedURL *string) (string, string, error) {
+func splitExtendedKey(extendedURL *string) (string, string, error) {
 	splitted := strings.Split(*extendedURL, ",")
 
 	if len(splitted) != 2 {
@@ -19,13 +19,17 @@ func splitExtendedURL(extendedURL *string) (string, string, error) {
 	return splitted[0], splitted[1], nil
 }
 
-func (cfg *apiConfig) urlToPresignedURL(extendedURL *string) (*string, error) {
+func (cfg *apiConfig) extendedKey(key string) *string {
+	extended := cfg.s3Bucket + "," + key
+	return &extended
+}
+func (cfg *apiConfig) extendedKeyToPresignedURL(extendedURL *string) (*string, error) {
 
 	if extendedURL == nil {
 		return nil, nil
 	}
 
-	bucket, key, err := splitExtendedURL(extendedURL)
+	bucket, key, err := splitExtendedKey(extendedURL)
 
 	if err != nil {
 		return nil, err
@@ -42,7 +46,7 @@ func (cfg *apiConfig) urlToPresignedURL(extendedURL *string) (*string, error) {
 
 func (cfg *apiConfig) dbVideoToSignedVideo(video database.Video) (database.Video, error) {
 
-	url, err := cfg.urlToPresignedURL(video.VideoURL)
+	url, err := cfg.extendedKeyToPresignedURL(video.VideoURL)
 
 	if err != nil {
 		return video, err

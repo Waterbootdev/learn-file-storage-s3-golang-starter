@@ -9,18 +9,9 @@ import (
 func (cfg *apiConfig) getPortURL() string {
 	return fmt.Sprintf("http://localhost:%s/", cfg.port)
 }
-func (cfg *apiConfig) getS3URL() string {
-	return fmt.Sprintf("https://%s.s3.%s.amazonaws.com/", cfg.s3Bucket, cfg.s3Region)
-}
 
 func (cfg *apiConfig) filePathURL(filePath string) *string {
 	path := cfg.getPortURL() + filePath
-	return &path
-}
-
-func (cfg *apiConfig) s3FilePathURL(fileName string) *string {
-
-	path := cfg.s3Bucket + "," + cfg.getS3URL() + fileName
 	return &path
 }
 
