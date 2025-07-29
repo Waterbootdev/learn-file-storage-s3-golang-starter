@@ -23,11 +23,11 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	extendedKey := cfg.extendedKey(fileName)
+	url := &fileName
 
-	fmt.Println("copied", written, "bytes to", *extendedKey)
+	fmt.Println("copied", written, "bytes to", *url)
 
 	cfg.updateVideo(w, videoID, userID, func(video *database.Video) {
-		video.VideoURL = extendedKey
+		video.VideoURL = url
 	})
 }

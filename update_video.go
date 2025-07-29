@@ -24,32 +24,5 @@ func (cfg *apiConfig) updateVideo(w http.ResponseWriter, videoId uuid.UUID, user
 		return
 	}
 
-	cfg.responsVideo(w, video)
-}
-
-func (cfg *apiConfig) responsVideo(w http.ResponseWriter, video database.Video) {
-	video, err := cfg.dbVideoToSignedVideo(video)
-
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Couldn't sign video", err)
-		return
-	}
-
 	respondWithJSON(w, http.StatusOK, video)
-}
-
-func (cfg *apiConfig) responsVideos(w http.ResponseWriter, videos []database.Video) {
-
-	responseVideos := make([]database.Video, len(videos))
-
-	for i, v := range videos {
-		currentVideo, err := cfg.dbVideoToSignedVideo(v)
-
-		if err != nil {
-			return
-		}
-		responseVideos[i] = currentVideo
-	}
-
-	respondWithJSON(w, http.StatusOK, responseVideos)
 }
