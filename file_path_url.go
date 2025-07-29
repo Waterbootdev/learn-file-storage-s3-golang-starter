@@ -20,7 +20,7 @@ func (cfg *apiConfig) filePathURL(filePath string) *string {
 
 func (cfg *apiConfig) s3FilePathURL(fileName string) *string {
 
-	path := cfg.getS3URL() + fileName
+	path := cfg.s3Bucket + "," + cfg.getS3URL() + fileName
 	return &path
 }
 
