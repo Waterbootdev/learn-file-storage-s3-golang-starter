@@ -33,5 +33,6 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 }
 
 func (cfg *apiConfig) cloudfrontURL(fileName string) *string {
-	panic("unimplemented")
+	url := cfg.s3CfDistribution + fileName
+	return &url
 }
