@@ -23,11 +23,15 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	url := &fileName
+	url := cfg.cloudfrontURL(fileName)
 
 	fmt.Println("copied", written, "bytes to", *url)
 
 	cfg.updateVideo(w, videoID, userID, func(video *database.Video) {
 		video.VideoURL = url
 	})
+}
+
+func (cfg *apiConfig) cloudfrontURL(fileName string) *string {
+	panic("unimplemented")
 }
